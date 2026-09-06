@@ -413,7 +413,7 @@ function QuickScoreModal({ student, onClose, onAdjustPoints, onAdjustStamps, onS
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 12, color: T.muted, marginBottom: 8, fontWeight: 700 }}>⚡ Quick Points:</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 7 }}>
-            {[-500, -50, +50, +500].map(d => (
+            {[-100, -50, +50, +100].map(d => (
               <button
                 key={d}
                 type="button"
@@ -439,22 +439,22 @@ function QuickScoreModal({ student, onClose, onAdjustPoints, onAdjustStamps, onS
             onClick={() => onAdjustStamps(student.id, 1)}
             style={{
               flex: 1, padding: "10px 0", borderRadius: 10,
-              background: T.raised, color: T.gold,
-              border: `1px solid ${T.gold}44`, fontWeight: 800, fontSize: 13, cursor: "pointer"
+              background: T.goldDim, color: T.gold,
+              border: `1.5px solid ${T.gold}`, fontWeight: 800, fontSize: 13, cursor: "pointer"
             }}
           >
-            ⭐ Add Star
+            ⭐ +1 Star
           </button>
           <button
             type="button"
             onClick={() => onAdjustStamps(student.id, -1)}
             style={{
               flex: 1, padding: "10px 0", borderRadius: 10,
-              background: T.raised, color: T.muted,
-              border: `1px solid ${T.line}`, fontWeight: 700, fontSize: 13, cursor: "pointer"
+              background: T.raised, color: "#F87171",
+              border: "1.5px solid #F8717166", fontWeight: 800, fontSize: 13, cursor: "pointer"
             }}
           >
-            Remove Star
+            ⭐ -1 Star
           </button>
         </div>
 
@@ -977,7 +977,7 @@ function ClassDashboard({
                     {/* Quick Adjust Buttons */}
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
                       <div style={{ display: "flex", gap: 6 }}>
-                        {[-500, -50, +50, +500].map(d => (
+                        {[-100, -50, +50, +100].map(d => (
                           <button
                             key={d}
                             type="button"
@@ -995,14 +995,14 @@ function ClassDashboard({
                         ))}
                       </div>
 
-                      <div style={{ display: "flex", gap: 6 }}>
+                      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                         <button
                           type="button"
                           onClick={() => adjustStamps(s.id, 1)}
                           style={{
-                            padding: "6px 11px", borderRadius: 8,
-                            background: T.raised, color: T.gold,
-                            border: `1px solid ${T.gold}44`, fontWeight: 800, fontSize: 12, cursor: "pointer",
+                            padding: "6px 12px", borderRadius: 8,
+                            background: T.goldDim, color: T.gold,
+                            border: `1.5px solid ${T.gold}`, fontWeight: 800, fontSize: 13, cursor: "pointer",
                           }}
                         >
                           ⭐ +1
@@ -1011,9 +1011,9 @@ function ClassDashboard({
                           type="button"
                           onClick={() => adjustStamps(s.id, -1)}
                           style={{
-                            padding: "6px 11px", borderRadius: 8,
-                            background: T.raised, color: T.muted,
-                            border: `1px solid ${T.line}`, fontWeight: 700, fontSize: 12, cursor: "pointer",
+                            padding: "6px 12px", borderRadius: 8,
+                            background: T.raised, color: "#F87171",
+                            border: "1.5px solid #F8717166", fontWeight: 800, fontSize: 13, cursor: "pointer",
                           }}
                         >
                           ⭐ -1
