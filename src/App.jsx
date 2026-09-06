@@ -731,12 +731,16 @@ function ClassDashboard({
   async function adjustStamps(sid, delta) {
     const s = students.find(x => x.id === sid);
     if (!s) return;
+    // If reducing and no manual stamps exist, deduct 500 points (1 auto stamp)
+    if (delta < 0 && (s.manualStamps || 0) === 0 && (s.points || 0) >= POINTS_PER_STAMP) {
+      return adjustPoints(sid, -POINTS_PER_STAMP);
+    }
     const newStamps = Math.max(0, Math.min(MAX_STAMPS, (s.manualStamps || 0) + delta));
     setStudents(p => p.map(x => x.id === sid ? { ...x, manualStamps: newStamps, _lastUpdated: Date.now() } : x));
     if (scannedStudent && scannedStudent.id === sid) {
       setScannedStudent(prev => ({ ...prev, manualStamps: newStamps }));
     }
-    say(delta > 0 ? `⭐ Stamp awarded to ${s.name}!` : "Stamp removed.");
+    say(delta > 0 ? `⭐ Stamp awarded to ${s.name}!` : "⭐ Stamp removed.");
     if (onStartUpdateStudent) onStartUpdateStudent(sid);
     try {
       await db.students.update(sid, { manual_stamps: newStamps });
@@ -996,18 +1000,29 @@ function ClassDashboard({
                           type="button"
                           onClick={() => adjustStamps(s.id, 1)}
                           style={{
-                            padding: "6px 12px", borderRadius: 8,
+                            padding: "6px 11px", borderRadius: 8,
                             background: T.raised, color: T.gold,
                             border: `1px solid ${T.gold}44`, fontWeight: 800, fontSize: 12, cursor: "pointer",
                           }}
                         >
-                          ⭐ Stamp
+                          ⭐ +1
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => adjustStamps(s.id, -1)}
+                          style={{
+                            padding: "6px 11px", borderRadius: 8,
+                            background: T.raised, color: T.muted,
+                            border: `1px solid ${T.line}`, fontWeight: 700, fontSize: 12, cursor: "pointer",
+                          }}
+                        >
+                          ⭐ -1
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDeleteStudent(s.id)}
                           style={{
-                            padding: "6px 12px", borderRadius: 8,
+                            padding: "6px 10px", borderRadius: 8,
                             background: "transparent", color: T.muted,
                             border: `1px solid ${T.line}`, fontSize: 12, cursor: "pointer",
                           }}
