@@ -591,31 +591,55 @@ function LoginScreen({ onLogin }) {
   const [u, setU] = useState("");
   const [p, setP] = useState("");
   const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
 
   function handleSubmit(e) {
     if (e) e.preventDefault();
-    if (u === "wayneherry" && p === "rush625") {
-      onLogin({ username: "wayneherry", role: "teacher" });
-    } else {
-      setErr("Invalid teacher username or password.");
-    }
+    setErr("");
+    setBusy(true);
+    setTimeout(() => {
+      setBusy(false);
+      const uid = u.trim();
+      const pwd = p.trim();
+      if (uid === "wayneherry" && pwd === "rush625") {
+        onLogin({ username: "wayneherry", role: "teacher" });
+      } else {
+        setErr("Invalid teacher username or password.");
+      }
+    }, 300);
   }
 
   return (
     <div style={{
-      minHeight: "100vh", display: "flex", alignItems: "center",
-      justifyContent: "center", background: T.bg, padding: 20,
+      minHeight: "100vh",
+      background: T.bg,
+      fontFamily: "'Nunito', sans-serif",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "36px 16px 48px",
+      position: "relative",
+      overflow: "hidden",
+      boxSizing: "border-box",
     }}>
+      {/* Background Gold Radial Glow */}
       <div style={{
-        width: "100%", maxWidth: 390, background: T.surface,
-        borderRadius: 24, padding: 32, border: `1.5px solid ${T.line}`,
-        boxShadow: `0 24px 60px rgba(0,0,0,0.6), 0 0 0 1px ${T.line}`,
+        position: "absolute", width: 520, height: 520, borderRadius: "50%",
+        background: `radial-gradient(circle, ${T.gold}16 0%, transparent 68%)`,
+        pointerEvents: "none",
+      }} />
+
+      <div style={{
+        width: "100%", maxWidth: 410, position: "relative",
+        animation: "popIn .45s cubic-bezier(.34,1.56,.64,1)",
       }}>
-        <div style={{ textAlign: "center", marginBottom: 28 }}>
+        {/* Top Logo + Brand (Full-screen header outside the card) */}
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{
-            width: 86, height: 86, borderRadius: "50%", overflow: "hidden",
-            margin: "0 auto 14px", display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: `0 4px 24px ${T.goldGlow}`, background: "transparent",
+            width: 130, height: 130, borderRadius: "50%", margin: "0 auto 16px",
+            background: "transparent", overflow: "hidden",
+            boxShadow: `0 0 0 4px ${T.goldDim}, 0 12px 40px ${T.goldGlow}`,
+            display: "flex", alignItems: "center", justifyContent: "center",
           }}>
             <img
               src={LOGO_IMG}
@@ -624,49 +648,80 @@ function LoginScreen({ onLogin }) {
               onError={(e) => { e.target.style.display = "none"; }}
             />
           </div>
-          <div style={{ fontFamily: "'Dancing Script', cursive", fontSize: 36, fontWeight: 700, color: T.gold }}>
+          <div style={{
+            fontFamily: "'Dancing Script', cursive", fontSize: 48, fontWeight: 700,
+            color: T.gold, lineHeight: 1.15, marginBottom: 6,
+          }}>
             BJ American School
           </div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: 1.5, marginTop: 4 }}>
+          <div style={{
+            fontFamily: "'Nunito', sans-serif", fontSize: 14, color: T.silver,
+            letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 700,
+          }}>
             Teacher's Hub
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: T.silver, marginBottom: 6 }}>Teacher ID</div>
-            <input
-              type="text"
-              value={u}
-              onChange={e => setU(e.target.value)}
-              placeholder=""
-              style={{
-                width: "100%", padding: "12px 14px", borderRadius: 12,
-                background: T.deep, border: `1.5px solid ${T.line}`, color: T.white,
-                fontSize: 14, outline: "none", boxSizing: "border-box",
-              }}
+        {/* Input Card */}
+        <div style={{
+          background: T.surface,
+          borderRadius: 24,
+          padding: "28px 22px",
+          border: `1.5px solid ${T.line}`,
+          boxShadow: "0 24px 64px rgba(0,0,0,0.7)",
+        }}>
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: T.silver, marginBottom: 8 }}>Teacher ID</div>
+              <input
+                type="text"
+                value={u}
+                onChange={e => setU(e.target.value)}
+                placeholder=""
+                style={{
+                  width: "100%", padding: "13px 16px", borderRadius: 12,
+                  background: T.deep, border: `1.5px solid ${T.line}`, color: T.white,
+                  fontSize: 15, outline: "none", boxSizing: "border-box",
+                }}
+                onFocus={e => e.target.style.borderColor = T.gold}
+                onBlur={e => e.target.style.borderColor = T.line}
+              />
+            </div>
+
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: T.silver, marginBottom: 8 }}>Password</div>
+              <input
+                type="password"
+                value={p}
+                onChange={e => setP(e.target.value)}
+                placeholder="••••••••"
+                style={{
+                  width: "100%", padding: "13px 16px", borderRadius: 12,
+                  background: T.deep, border: `1.5px solid ${T.line}`, color: T.white,
+                  fontSize: 15, outline: "none", boxSizing: "border-box",
+                }}
+                onFocus={e => e.target.style.borderColor = T.gold}
+                onBlur={e => e.target.style.borderColor = T.line}
+              />
+            </div>
+
+            {err && (
+              <div style={{
+                background: `${T.red}22`, border: `1px solid ${T.red}55`, color: T.red,
+                padding: "10px 14px", borderRadius: 10, fontSize: 13, fontWeight: 700, textAlign: "center",
+              }}>
+                ⚠️ {err}
+              </div>
+            )}
+
+            <OBtn
+              label={busy ? "Loading…" : "Let's go! 🚀"}
+              onClick={handleSubmit}
+              disabled={busy}
+              style={{ marginTop: 6, padding: "14px 0", fontSize: 16, width: "100%" }}
             />
-          </div>
-
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: T.silver, marginBottom: 6 }}>Password</div>
-            <input
-              type="password"
-              value={p}
-              onChange={e => setP(e.target.value)}
-              placeholder="••••••••"
-              style={{
-                width: "100%", padding: "12px 14px", borderRadius: 12,
-                background: T.deep, border: `1.5px solid ${T.line}`, color: T.white,
-                fontSize: 14, outline: "none", boxSizing: "border-box",
-              }}
-            />
-          </div>
-
-          {err && <div style={{ fontSize: 13, color: T.red, textAlign: "center" }}>{err}</div>}
-
-          <OBtn label="Let's Go!" onClick={handleSubmit} style={{ marginTop: 10 }} />
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );
