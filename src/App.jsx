@@ -22,8 +22,7 @@ const T = {
 
 const AV_COLS = ["#F5A623", "#3B82F6", "#10B981", "#EC4899", "#8B5CF6", "#06B6D4", "#F97316"];
 const LOGO_IMG = "/logo.png";
-const POINTS_PER_STAMP = 500;
-const MAX_STAMPS = 12;
+const MAX_STAMPS = 10;
 
 // ─── Supabase Client Config ───────────────────────────────────────────────────
 const SUPABASE_URL = "https://uarrjmzbwbocipdlzhcm.supabase.co";
@@ -101,7 +100,7 @@ function playChime() {
 
 // ─── Reusable Components ──────────────────────────────────────────────────────
 function calcStamps(s) {
-  return Math.min(MAX_STAMPS, (s.manualStamps || 0) + Math.floor((s.points || 0) / POINTS_PER_STAMP));
+  return Math.min(MAX_STAMPS, Math.max(0, s.manualStamps || 0));
 }
 
 function Avatar({ name = "", size = 44, index = 0 }) {
@@ -121,36 +120,112 @@ function Avatar({ name = "", size = 44, index = 0 }) {
   );
 }
 
-function StampCell({ index, filled, auto }) {
+function StampCell({ index, filled }) {
   return (
     <div style={{
-      width: 42, height: 42, borderRadius: 10,
-      background: filled ? (auto ? T.goldDim : `${T.gold}18`) : T.deep,
+      width: 44, height: 44, borderRadius: 10,
+      background: filled ? T.goldDim : T.deep,
       border: `1.5px solid ${filled ? T.gold : T.line}`,
       display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: 20, transition: "all .25s ease",
-      boxShadow: filled ? `0 0 10px ${T.goldGlow}` : "none",
+      fontSize: 22, transition: "all .25s ease",
+      boxShadow: filled ? `0 0 12px ${T.goldGlow}` : "none",
     }}>
-      {filled ? (auto ? "⚡" : "⭐") : (
+      {filled ? "⭐" : (
         <span style={{ fontSize: 11, fontWeight: 700, color: T.line }}>{index + 1}</span>
       )}
     </div>
   );
 }
 
-function StampGrid({ manualStamps = 0, points = 0 }) {
-  const auto = Math.min(Math.floor(points / POINTS_PER_STAMP), MAX_STAMPS);
-  const total = Math.min(MAX_STAMPS, manualStamps + auto);
+function StampGrid({ manualStamps = 0 }) {
+  const total = Math.min(MAX_STAMPS, Math.max(0, manualStamps));
   return (
     <div style={{
       display: "grid",
-      gridTemplateColumns: "repeat(6, 1fr)",
-      gap: 7,
-      maxWidth: 290,
+      gridTemplateColumns: "repeat(5, 1fr)",
+      gap: 8,
+      maxWidth: 260,
     }}>
       {Array.from({ length: MAX_STAMPS }).map((_, i) => (
-        <StampCell key={i} index={i} filled={i < total} auto={i < Math.min(auto, total)} />
+        <StampCell key={i} index={i} filled={i < total} />
       ))}
+    </div>
+  );
+}
+
+const inpSt = () => ({
+  width: "100%", padding: "12px 14px", borderRadius: 12,
+  border: `1.5px solid ${T.line}`, background: T.deep,
+  color: T.white, fontSize: 14, fontFamily: "'Nunito',sans-serif",
+  boxSizing: "border-box", outline: "none",
+  transition: "border-color .2s",
+});
+
+function FL({ children }) {
+  return <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 17, fontWeight: 700, color: T.silver, marginBottom: 5 }}>{children}</div>;
+}
+
+function GradeItemForm({ onSave, onCancel }) {
+  const todayStr = new Date().toISOString().split('T')[0];
+  const [f, setF] = useState({ name: "", maxScore: 100, date: todayStr });
+
+  function save() {
+    if (!f.name.trim() || !f.maxScore) return;
+    onSave({ name: f.name.trim(), maxScore: Number(f.maxScore), date: f.date || todayStr });
+  }
+
+  return (
+    <div style={{
+      background: T.raised, borderRadius: 20, padding: 22, marginBottom: 20,
+      border: `1.5px solid ${T.gold}55`,
+      boxShadow: `0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px ${T.goldDim}`,
+      animation: "popIn .3s cubic-bezier(.34,1.56,.64,1)",
+    }}>
+      <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 24, fontWeight: 700, color: T.gold, marginBottom: 18 }}>
+        📊 New Grade Item
+      </div>
+
+      <div style={{ marginBottom: 13 }}>
+        <FL>Quiz / Exam Name *</FL>
+        <input
+          value={f.name}
+          onChange={e => setF(p => ({ ...p, name: e.target.value }))}
+          placeholder="e.g. Unit 1 Vocabulary Quiz"
+          style={inpSt()}
+          onFocus={e => e.target.style.borderColor = T.gold}
+          onBlur={e => e.target.style.borderColor = T.line}
+        />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 18 }}>
+        <div>
+          <FL>Max Score *</FL>
+          <input
+            type="number" min="1"
+            value={f.maxScore}
+            onChange={e => setF(p => ({ ...p, maxScore: e.target.value }))}
+            style={inpSt()}
+            onFocus={e => e.target.style.borderColor = T.gold}
+            onBlur={e => e.target.style.borderColor = T.line}
+          />
+        </div>
+        <div>
+          <FL>Date</FL>
+          <input
+            type="date"
+            value={f.date}
+            onChange={e => setF(p => ({ ...p, date: e.target.value }))}
+            style={inpSt()}
+            onFocus={e => e.target.style.borderColor = T.gold}
+            onBlur={e => e.target.style.borderColor = T.line}
+          />
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 10 }}>
+        <OBtn label="Save Grade Item" onClick={save} style={{ flex: 1 }} />
+        <GBtn label="Cancel" onClick={onCancel} style={{ flex: 1 }} />
+      </div>
     </div>
   );
 }
@@ -396,17 +471,17 @@ function QuickScoreModal({ student, onClose, onAdjustPoints, onAdjustStamps, onS
           </div>
         </div>
 
-        {/* 12-Stamp Grid Card */}
+        {/* 10-Stamp Grid Card */}
         <div style={{
           background: T.deep, borderRadius: 16, padding: 14,
           border: `1px solid ${T.line}`, marginBottom: 16, display: "flex",
           flexDirection: "column", alignItems: "center",
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", width: "100%", marginBottom: 10 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: T.silver }}>12-Stamp Reward Card</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: T.silver }}>10-Stamp Reward Card</span>
             <span style={{ fontSize: 13, fontWeight: 800, color: T.gold }}>{stamps} / {MAX_STAMPS}</span>
           </div>
-          <StampGrid manualStamps={student.manualStamps} points={student.points} />
+          <StampGrid manualStamps={student.manualStamps} />
         </div>
 
         {/* Fast Point Adjustment */}
@@ -482,15 +557,15 @@ function TransitionScreen({ onDone }) {
       justifyContent: "center", padding: 24, textAlign: "center",
     }}>
       <div style={{
-        width: 130, height: 130, borderRadius: "50%",
-        background: `radial-gradient(circle, ${T.gold}22 0%, transparent 70%)`,
+        width: 120, height: 120, borderRadius: "50%", overflow: "hidden",
         display: "flex", alignItems: "center", justifyContent: "center",
         marginBottom: 26, boxShadow: `0 0 50px ${T.goldGlow}`,
+        background: "transparent",
       }}>
         <img
           src={LOGO_IMG}
           alt="BJ American School Logo"
-          style={{ width: 96, height: 96, objectFit: "contain" }}
+          style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
           onError={(e) => { e.target.style.display = "none"; }}
         />
       </div>
@@ -537,12 +612,18 @@ function LoginScreen({ onLogin }) {
         boxShadow: `0 24px 60px rgba(0,0,0,0.6), 0 0 0 1px ${T.line}`,
       }}>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <img
-            src={LOGO_IMG}
-            alt="Logo"
-            style={{ width: 80, height: 80, objectFit: "contain", marginBottom: 12 }}
-            onError={(e) => { e.target.style.display = "none"; }}
-          />
+          <div style={{
+            width: 86, height: 86, borderRadius: "50%", overflow: "hidden",
+            margin: "0 auto 14px", display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: `0 4px 24px ${T.goldGlow}`, background: "transparent",
+          }}>
+            <img
+              src={LOGO_IMG}
+              alt="BJ American School Logo"
+              style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
+              onError={(e) => { e.target.style.display = "none"; }}
+            />
+          </div>
           <div style={{ fontFamily: "'Dancing Script', cursive", fontSize: 36, fontWeight: 700, color: T.gold }}>
             BJ American School
           </div>
@@ -558,7 +639,7 @@ function LoginScreen({ onLogin }) {
               type="text"
               value={u}
               onChange={e => setU(e.target.value)}
-              placeholder="wayneherry"
+              placeholder=""
               style={{
                 width: "100%", padding: "12px 14px", borderRadius: 12,
                 background: T.deep, border: `1.5px solid ${T.line}`, color: T.white,
@@ -705,6 +786,8 @@ function ClassDashboard({
   const [scannedStudent, setScannedStudent] = useState(null);
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [newStudentName, setNewStudentName] = useState("");
+  const [showGradeForm, setShowGradeForm] = useState(false);
+  const [openGradeId, setOpenGradeId] = useState(null);
 
   const say = msg => setToast(msg);
 
@@ -731,10 +814,6 @@ function ClassDashboard({
   async function adjustStamps(sid, delta) {
     const s = students.find(x => x.id === sid);
     if (!s) return;
-    // If reducing and no manual stamps exist, deduct 500 points (1 auto stamp)
-    if (delta < 0 && (s.manualStamps || 0) === 0 && (s.points || 0) >= POINTS_PER_STAMP) {
-      return adjustPoints(sid, -POINTS_PER_STAMP);
-    }
     const newStamps = Math.max(0, Math.min(MAX_STAMPS, (s.manualStamps || 0) + delta));
     setStudents(p => p.map(x => x.id === sid ? { ...x, manualStamps: newStamps, _lastUpdated: Date.now() } : x));
     if (scannedStudent && scannedStudent.id === sid) {
@@ -783,6 +862,47 @@ function ClassDashboard({
       say("Student removed.");
     } catch (e) {
       say("⚠️ Error removing student.");
+    }
+  }
+
+  async function addGradeItem(data) {
+    try {
+      const row = await db.gradeItems.create({
+        class_id: currentClass.id,
+        name: data.name,
+        max_score: data.maxScore,
+        date: data.date,
+      });
+      const created = Array.isArray(row) ? row[0] : row;
+      const item = {
+        id: created.id,
+        name: created.name,
+        maxScore: created.max_score ?? data.maxScore,
+        date: created.date ?? data.date,
+        classId: currentClass.id,
+      };
+      setGradeItems(p => [item, ...p]);
+      setGrades(p => ({ ...p, [item.id]: {} }));
+      setShowGradeForm(false);
+      say(`📊 ${data.name} created!`);
+    } catch (e) {
+      say("⚠️ Couldn't create grade item.");
+    }
+  }
+
+  async function deleteGradeItem(id) {
+    if (!window.confirm("Delete this grade item?")) return;
+    const prevItems = gradeItems, prevGrades = grades;
+    setGradeItems(p => p.filter(g => g.id !== id));
+    setGrades(p => { const n = { ...p }; delete n[id]; return n; });
+    if (openGradeId === id) setOpenGradeId(null);
+    try {
+      await db.gradeItems.remove(id);
+      say("Grade item deleted.");
+    } catch (e) {
+      setGradeItems(prevItems);
+      setGrades(prevGrades);
+      say("⚠️ Couldn't delete grade item.");
     }
   }
 
@@ -899,7 +1019,7 @@ function ClassDashboard({
           ))}
         </div>
 
-        {/* ─── TAB 1: Students & 12-Stamp Cards ─── */}
+        {/* ─── TAB 1: Students & 10-Stamp Cards ─── */}
         {tab === "students" && (
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
@@ -971,7 +1091,7 @@ function ClassDashboard({
 
                     {/* Stamp Grid */}
                     <div style={{ background: T.deep, borderRadius: 14, padding: 12, border: `1px solid ${T.line}` }}>
-                      <StampGrid manualStamps={s.manualStamps} points={s.points} />
+                      <StampGrid manualStamps={s.manualStamps} />
                     </div>
 
                     {/* Quick Adjust Buttons */}
@@ -1040,52 +1160,135 @@ function ClassDashboard({
 
         {/* ─── TAB 2: Exams & Grades ─── */}
         {tab === "grades" && (
-          <div style={{ background: T.surface, borderRadius: 20, padding: 20, border: `1.5px solid ${T.line}` }}>
-            <div style={{ fontSize: 18, fontWeight: 700, color: T.white, marginBottom: 16 }}>
-              Class Gradebook
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: T.white }}>
+                  Exams & Grades
+                </div>
+                <div style={{ fontSize: 12, color: T.muted }}>
+                  {gradeItems.length} grade item{gradeItems.length !== 1 ? "s" : ""}
+                </div>
+              </div>
+              {!showGradeForm && (
+                <OBtn label="+ New ✨" onClick={() => setShowGradeForm(true)} small />
+              )}
             </div>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
-                <thead>
-                  <tr style={{ borderBottom: `1.5px solid ${T.line}`, color: T.muted, fontSize: 12 }}>
-                    <th style={{ padding: "10px 12px" }}>STUDENT</th>
-                    {gradeItems.map(item => (
-                      <th key={item.id} style={{ padding: "10px 12px" }}>
-                        <div>{item.name}</div>
-                        <div style={{ fontSize: 10, color: T.line }}>{item.date}</div>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {students.map(s => (
-                    <tr key={s.id} style={{ borderBottom: `1px solid ${T.line}` }}>
-                      <td style={{ padding: "12px", fontWeight: 700, color: T.white }}>
-                        {s.name}
-                      </td>
-                      {gradeItems.map(item => {
-                        const val = grades[item.id]?.[s.id] ?? "";
-                        return (
-                          <td key={item.id} style={{ padding: "8px 12px" }}>
-                            <input
-                              type="number"
-                              defaultValue={val}
-                              placeholder="-"
-                              onBlur={e => handleSaveScore(item.id, s.id, e.target.value)}
-                              style={{
-                                width: 64, padding: "8px", borderRadius: 8,
-                                background: T.deep, border: `1px solid ${T.line}`,
-                                color: T.white, fontSize: 14, textAlign: "center",
-                                outline: "none",
-                              }}
-                            />
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+
+            {showGradeForm && (
+              <GradeItemForm
+                onSave={addGradeItem}
+                onCancel={() => setShowGradeForm(false)}
+              />
+            )}
+
+            {gradeItems.length === 0 && !showGradeForm && (
+              <div style={{
+                textAlign: "center", padding: "52px 0", color: T.muted,
+                fontFamily: "'Cormorant Garamond',serif", fontSize: 22,
+                background: T.surface, borderRadius: 20, border: `1.5px dashed ${T.line}`
+              }}>
+                No grade items yet ✨
+              </div>
+            )}
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {gradeItems.map((g, i) => {
+                const scores = grades[g.id] || {};
+                const entered = students.filter(s => scores[s.id] !== undefined && scores[s.id] !== null);
+                const avg = entered.length
+                  ? (entered.reduce((sum, s) => sum + Number(scores[s.id]), 0) / entered.length).toFixed(1)
+                  : "—";
+                const maxScore = g.max_score ?? g.maxScore ?? 100;
+                const isOpen = openGradeId === g.id;
+
+                return (
+                  <div
+                    key={g.id}
+                    style={{
+                      background: T.surface, borderRadius: 20, padding: 18,
+                      border: `1.5px solid ${T.line}`,
+                      boxShadow: "0 6px 24px rgba(0,0,0,0.35)",
+                      animation: `popIn .35s ease ${i * 0.05}s both`,
+                    }}
+                  >
+                    <div
+                      style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
+                      onClick={() => setOpenGradeId(isOpen ? null : g.id)}
+                    >
+                      <div>
+                        <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 22, fontWeight: 700, color: T.white }}>
+                          {g.name}
+                        </div>
+                        <div style={{ fontFamily: "'Nunito',sans-serif", fontSize: 12, color: T.muted, marginTop: 3 }}>
+                          Max {maxScore} · {g.date} · {entered.length}/{students.length} graded · Avg {avg}
+                        </div>
+                      </div>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); deleteGradeItem(g.id); }}
+                          style={{
+                            fontFamily: "'Nunito',sans-serif", fontSize: 12, color: T.muted,
+                            background: "transparent", border: `1px solid ${T.line}`, borderRadius: 8,
+                            padding: "6px 12px", cursor: "pointer",
+                          }}
+                        >
+                          Delete
+                        </button>
+                        <span style={{ color: T.gold, fontSize: 16, fontWeight: 800 }}>
+                          {isOpen ? "▲" : "▼"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {isOpen && (
+                      <div style={{ marginTop: 16, borderTop: `1px solid ${T.line}`, paddingTop: 14 }}>
+                        {students.length === 0 ? (
+                          <div style={{ fontSize: 13, color: T.muted, textAlign: "center", padding: "10px 0" }}>
+                            No students in this class yet.
+                          </div>
+                        ) : (
+                          students.map((s, sIdx) => {
+                            const curScore = scores[s.id];
+                            return (
+                              <div
+                                key={s.id}
+                                style={{
+                                  display: "flex", alignItems: "center", gap: 12,
+                                  padding: "8px 0", borderBottom: `1px solid ${T.deep}`
+                                }}
+                              >
+                                <Avatar name={s.name} size={34} index={sIdx} />
+                                <div style={{ flex: 1, fontSize: 14, fontWeight: 700, color: T.silver }}>
+                                  {s.name}
+                                </div>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max={maxScore}
+                                  value={curScore ?? ""}
+                                  placeholder="—"
+                                  onChange={(e) => handleSaveScore(g.id, s.id, e.target.value)}
+                                  style={{
+                                    width: 68, textAlign: "center", padding: "8px", borderRadius: 8,
+                                    background: T.deep, border: `1px solid ${T.line}`, color: T.white,
+                                    fontSize: 14, outline: "none", fontWeight: 700,
+                                  }}
+                                />
+                                <span style={{ fontSize: 12, color: T.muted, width: 36 }}>
+                                  /{maxScore}
+                                </span>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -1225,7 +1428,15 @@ export default function App() {
         });
       }
 
-      if (giRows) setGradeItems(giRows);
+      if (giRows) {
+        setGradeItems(giRows.map(r => ({
+          id: r.id,
+          name: r.name,
+          maxScore: r.max_score ?? r.maxScore ?? 100,
+          date: r.date,
+          classId: r.class_id,
+        })));
+      }
 
       if (gRows) {
         const gradeMap = {};
