@@ -554,13 +554,21 @@ function TransitionScreen({ onDone }) {
     <div style={{
       position: "fixed", inset: 0, background: T.bg, zIndex: 99999,
       display: "flex", flexDirection: "column", alignItems: "center",
-      justifyContent: "center", padding: 24, textAlign: "center",
+      justifyContent: "center", padding: "24px 16px", textAlign: "center",
     }}>
+      {/* Background Gold Radial Glow */}
       <div style={{
-        width: 120, height: 120, borderRadius: "50%", overflow: "hidden",
+        position: "absolute", width: 450, height: 450, borderRadius: "50%",
+        background: `radial-gradient(circle, ${T.gold}16 0%, transparent 68%)`,
+        pointerEvents: "none",
+      }} />
+
+      {/* Circular Logo with Glowing Ring */}
+      <div style={{
+        width: 124, height: 124, borderRadius: "50%", overflow: "hidden",
         display: "flex", alignItems: "center", justifyContent: "center",
-        marginBottom: 26, boxShadow: `0 0 50px ${T.goldGlow}`,
-        background: "transparent",
+        marginBottom: 22, boxShadow: `0 0 0 3px ${T.goldDim}, 0 10px 36px ${T.goldGlow}`,
+        background: "transparent", position: "relative",
       }}>
         <img
           src={LOGO_IMG}
@@ -569,18 +577,32 @@ function TransitionScreen({ onDone }) {
           onError={(e) => { e.target.style.display = "none"; }}
         />
       </div>
+
+      {/* Single-line Title (White Cursive matching Learning with Wayne) */}
       <div style={{
-        fontFamily: "'Dancing Script', cursive", fontSize: 44,
-        fontWeight: 700, color: T.gold, marginBottom: 8, letterSpacing: 1,
+        fontFamily: "'Dancing Script', cursive",
+        fontSize: "clamp(28px, 8vw, 36px)",
+        fontWeight: 700,
+        color: T.white,
+        marginBottom: 8,
+        whiteSpace: "nowrap",
+        letterSpacing: 0.5,
+        lineHeight: 1.2,
       }}>
         BJ American School
       </div>
+
+      {/* Single-line Subtitle (Gold Uppercase without 'class') */}
       <div style={{
-        fontFamily: "'Nunito', sans-serif", fontSize: 14,
-        fontWeight: 800, color: T.silver, textTransform: "uppercase",
-        letterSpacing: 2.5,
+        fontFamily: "'Nunito', sans-serif",
+        fontSize: "clamp(11px, 3.2vw, 13px)",
+        fontWeight: 800,
+        color: T.gold,
+        textTransform: "uppercase",
+        letterSpacing: 2,
+        whiteSpace: "nowrap",
       }}>
-        Learning with Fun in Wayne's Class
+        Learning with Fun in Wayne's
       </div>
     </div>
   );
