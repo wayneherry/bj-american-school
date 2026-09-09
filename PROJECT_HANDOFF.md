@@ -8,7 +8,7 @@ This document serves as the master architecture and design reference for **BJ Am
 *   **School Title**: `BJ American School`
 *   **Slogan**: `Learning with Fun in Wayne's Class`
 *   **Target Users**: Teacher-centric (Wayne). Elementary school students have physical QR badge stickers on textbooks/contact books.
-*   **Teacher Credentials**: `wayneherry` / `rush625`
+*   **Teacher Credentials**: `wayneherry` / `[CONFIDENTIAL_TEACHER_PASSWORD]`
 *   **Theme Token (Scheme A)**: Deep Navy (`#0A1128`) & Royal Gold (`#F5A623`).
 
 ---
@@ -19,18 +19,18 @@ This document serves as the master architecture and design reference for **BJ Am
 *   Wayne can create, rename, and delete classes.
 *   Selecting a class navigates to that specific classroom's dashboard.
 *   Quick "🔄 Switch Class" button in header allows instant navigation between classes.
+*   Class and student deletions require Teacher Password verification to prevent accidental data loss.
 *   Students and grade items are scoped strictly by `class_id`.
 
-### 2. 12-Stamp Progression System
-*   12-cell card grid (`MAX_STAMPS = 12`).
-*   Auto Stamp: 1 stamp per 500 points (`POINTS_PER_STAMP = 500`).
-*   Manual Stars: Supported (⭐).
-*   Quick point adjustments: `[-500, -50, +50, +500]` for rapid 500-point card deductions.
+### 2. 10-Stamp Progression System
+*   10-cell card grid (`MAX_STAMPS = 10`, 5x2 grid).
+*   Points and stamps are decoupled (points: `[-100, -50, +50, +100]`, stamps: purely manual `⭐ +1 / ⭐ -1`).
+*   Student Name Editing: Supported via `✏️ Edit` button or clicking student name.
 
 ### 3. QR Code Badge Generation & Live Scanner
 *   **QR Scanner (📷)**: Live device camera scanning in browser/PWA.
     *   Synthesizes a pleasant audio chime on scan.
-    *   Pops up the **Quick Action Modal** with student's 12-stamp card and `+500 / +50 / -50 / -500` buttons.
+    *   Pops up the **Quick Action Modal** with student's 10-stamp card and `+100 / +50 / -50 / -100` buttons.
     *   Includes a "Scan Next" button for consecutive student scanning.
 *   **Printable Badges**: In the "Print QR Badges" tab, automatically arranges all students' QR codes with names into printable cards/stickers.
 
