@@ -290,6 +290,95 @@ function GBtn({ label, onClick, small = false, style = {} }) {
   );
 }
 
+// ─── Password Confirmation Modal for Deletion ─────────────────────────────────
+function PasswordConfirmModal({
+  title = "Security Verification",
+  message = "This action cannot be undone. Enter your teacher password to confirm:",
+  confirmText = "Verify & Delete",
+  onConfirm,
+  onCancel,
+}) {
+  const [pwd, setPwd] = useState("");
+  const [err, setErr] = useState("");
+
+  function handleVerify(e) {
+    if (e) e.preventDefault();
+    if (pwd === "rush625") {
+      onConfirm();
+    } else {
+      setErr("Incorrect password! Action cancelled.");
+    }
+  }
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)",
+      backdropFilter: "blur(6px)", zIndex: 99999,
+      display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+    }}>
+      <div style={{
+        width: "100%", maxWidth: 390, background: T.surface,
+        borderRadius: 22, padding: 26, border: `1.5px solid ${T.red}66`,
+        boxShadow: "0 24px 60px rgba(0,0,0,0.9)",
+        animation: "popIn .25s cubic-bezier(.34,1.56,.64,1)",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+          <span style={{ fontSize: 24 }}>🔒</span>
+          <div style={{ fontSize: 18, fontWeight: 800, color: T.white }}>
+            {title}
+          </div>
+        </div>
+
+        <div style={{ fontSize: 13, color: T.silver, lineHeight: 1.6, marginBottom: 18 }}>
+          {message}
+        </div>
+
+        <form onSubmit={handleVerify}>
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 12, color: T.muted, marginBottom: 6, fontWeight: 700 }}>
+              Teacher Password Required
+            </div>
+            <input
+              type="password"
+              value={pwd}
+              onChange={e => { setPwd(e.target.value); setErr(""); }}
+              placeholder="Enter teacher password"
+              autoFocus
+              style={{
+                width: "100%", padding: "12px 14px", borderRadius: 12,
+                background: T.deep, border: `1.5px solid ${err ? T.red : T.line}`,
+                color: T.white, fontSize: 14, outline: "none", boxSizing: "border-box",
+              }}
+              onFocus={e => { if (!err) e.target.style.borderColor = T.gold; }}
+              onBlur={e => { if (!err) e.target.style.borderColor = T.line; }}
+            />
+            {err && (
+              <div style={{ color: T.red, fontSize: 12, marginTop: 6, fontWeight: 700 }}>
+                ⚠️ {err}
+              </div>
+            )}
+          </div>
+
+          <div style={{ display: "flex", gap: 10 }}>
+            <button
+              type="submit"
+              style={{
+                flex: 1, padding: "11px 0", borderRadius: 10,
+                background: T.red, color: "#fff", border: "none",
+                fontWeight: 800, fontSize: 14, cursor: "pointer",
+                boxShadow: "0 4px 14px rgba(239, 68, 68, 0.4)",
+              }}
+            >
+              {confirmText}
+            </button>
+            <GBtn label="Cancel" onClick={onCancel} style={{ flex: 1 }} />
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ─── Student QR Code Display Component ─────────────────────────────────────────
 function StudentQRCode({ studentId, size = 110 }) {
   const [dataUrl, setDataUrl] = useState("");
@@ -753,6 +842,7 @@ function LoginScreen({ onLogin }) {
 function ClassSelectScreen({ classes, onSelectClass, onAddClass, onDeleteClass, onLogout }) {
   const [showAdd, setShowAdd] = useState(false);
   const [newClassName, setNewClassName] = useState("");
+  const [deleteTargetClass, setDeleteTargetClass] = useState(null);
 
   function handleCreate() {
     if (!newClassName.trim()) return;
@@ -763,6 +853,21 @@ function ClassSelectScreen({ classes, onSelectClass, onAddClass, onDeleteClass, 
 
   return (
     <div style={{ minHeight: "100vh", background: T.bg, padding: "28px 20px" }}>
+      {/* Password Confirmation Modal for Deleting Class */}
+      {deleteTargetClass && (
+        <PasswordConfirmModal
+          title="Delete Classroom"
+          message={`Are you sure you want to permanently delete "${deleteTargetClass.name}"? All enrolled students, scores, and class data will be permanently erased.`}
+          confirmText="Delete Classroom"
+          onConfirm={() => {
+            const cid = deleteTargetClass.id;
+            setDeleteTargetClass(null);
+            onDeleteClass(cid);
+          }}
+          onCancel={() => setDeleteTargetClass(null)}
+        />
+      )}
+
       <div style={{ maxWidth: 840, margin: "0 auto" }}>
         {/* Top bar */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 30 }}>
@@ -834,7 +939,7 @@ function ClassSelectScreen({ classes, onSelectClass, onAddClass, onDeleteClass, 
                 </span>
                 <button
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); onDeleteClass(c.id); }}
+                  onClick={(e) => { e.stopPropagation(); setDeleteTargetClass(c); }}
                   style={{
                     background: "transparent", border: "none", color: T.muted,
                     fontSize: 12, cursor: "pointer", padding: "4px 8px"
@@ -865,6 +970,8 @@ function ClassDashboard({
   const [newStudentName, setNewStudentName] = useState("");
   const [showGradeForm, setShowGradeForm] = useState(false);
   const [openGradeId, setOpenGradeId] = useState(null);
+  const [editingStudent, setEditingStudent] = useState(null);
+  const [deleteTargetStudent, setDeleteTargetStudent] = useState(null);
 
   const say = msg => setToast(msg);
 
@@ -931,14 +1038,33 @@ function ClassDashboard({
     }
   }
 
-  async function handleDeleteStudent(sid) {
-    if (!window.confirm("Remove this student from class?")) return;
+  async function executeDeleteStudent(sid) {
     setStudents(prev => prev.filter(x => x.id !== sid));
+    say("Student removed.");
     try {
       await db.students.remove(sid);
-      say("Student removed.");
     } catch (e) {
       say("⚠️ Error removing student.");
+    }
+  }
+
+  async function handleSaveEditStudent() {
+    if (!editingStudent || !editingStudent.name.trim()) return;
+    const newName = editingStudent.name.trim();
+    const sid = editingStudent.id;
+    setStudents(prev => prev.map(s => s.id === sid ? { ...s, name: newName, _lastUpdated: Date.now() } : s));
+    if (scannedStudent && scannedStudent.id === sid) {
+      setScannedStudent(prev => ({ ...prev, name: newName }));
+    }
+    setEditingStudent(null);
+    say(`Student updated to ${newName}!`);
+    if (onStartUpdateStudent) onStartUpdateStudent(sid);
+    try {
+      await db.students.update(sid, { name: newName });
+    } catch (e) {
+      say("⚠️ Error updating student name.");
+    } finally {
+      if (onEndUpdateStudent) onEndUpdateStudent(sid);
     }
   }
 
@@ -1037,6 +1163,60 @@ function ClassDashboard({
             setScannedStudent(null);
             setScannerOpen(true);
           }}
+        />
+      )}
+
+      {/* Edit Student Modal */}
+      {editingStudent && (
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)",
+          backdropFilter: "blur(6px)", zIndex: 99999,
+          display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+        }}>
+          <div style={{
+            width: "100%", maxWidth: 390, background: T.surface,
+            borderRadius: 22, padding: 26, border: `1.5px solid ${T.gold}66`,
+            boxShadow: `0 20px 60px rgba(0,0,0,0.85), 0 0 0 1px ${T.goldDim}`,
+            animation: "popIn .25s cubic-bezier(.34,1.56,.64,1)",
+          }}>
+            <div style={{ fontSize: 20, fontFamily: "'Cormorant Garamond',serif", fontWeight: 700, color: T.gold, marginBottom: 16 }}>
+              ✏️ Edit Student Name
+            </div>
+            <form onSubmit={e => { e.preventDefault(); handleSaveEditStudent(); }}>
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 13, color: T.silver, marginBottom: 8, fontWeight: 700 }}>Student Full Name *</div>
+                <input
+                  type="text"
+                  value={editingStudent.name}
+                  onChange={e => setEditingStudent(p => ({ ...p, name: e.target.value }))}
+                  placeholder="Student full name"
+                  autoFocus
+                  style={inpSt()}
+                  onFocus={e => e.target.style.borderColor = T.gold}
+                  onBlur={e => e.target.style.borderColor = T.line}
+                />
+              </div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <OBtn label="Save Changes" onClick={handleSaveEditStudent} style={{ flex: 1 }} />
+                <GBtn label="Cancel" onClick={() => setEditingStudent(null)} style={{ flex: 1 }} />
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Student Password Confirmation Modal */}
+      {deleteTargetStudent && (
+        <PasswordConfirmModal
+          title="Delete Student"
+          message={`Are you sure you want to permanently remove "${deleteTargetStudent.name}"? All associated points, stamps, and grade records will be deleted.`}
+          confirmText="Delete Student"
+          onConfirm={() => {
+            const sid = deleteTargetStudent.id;
+            setDeleteTargetStudent(null);
+            executeDeleteStudent(sid);
+          }}
+          onCancel={() => setDeleteTargetStudent(null)}
         />
       )}
 
@@ -1150,8 +1330,16 @@ function ClassDashboard({
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                       <Avatar name={s.name} size={48} index={idx} />
                       <div>
-                        <div style={{ fontSize: 20, fontFamily: "'Cormorant Garamond',serif", fontWeight: 700, color: T.white }}>
+                        <div
+                          onClick={() => setEditingStudent({ id: s.id, name: s.name })}
+                          style={{
+                            fontSize: 20, fontFamily: "'Cormorant Garamond',serif", fontWeight: 700, color: T.white,
+                            cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6,
+                          }}
+                          title="Click to edit student name"
+                        >
                           {s.name}
+                          <span style={{ fontSize: 12, color: T.gold, opacity: 0.8 }}>✏️</span>
                         </div>
                         <div style={{ fontSize: 12, color: T.muted }}>
                           ID #{s.id} · {stamps} / {MAX_STAMPS} stamps
@@ -1217,7 +1405,19 @@ function ClassDashboard({
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleDeleteStudent(s.id)}
+                          onClick={() => setEditingStudent({ id: s.id, name: s.name })}
+                          style={{
+                            padding: "6px 11px", borderRadius: 8,
+                            background: T.deep, color: T.gold,
+                            border: `1px solid ${T.gold}55`, fontWeight: 700, fontSize: 13, cursor: "pointer",
+                            display: "inline-flex", alignItems: "center", gap: 4,
+                          }}
+                        >
+                          ✏️ Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteTargetStudent(s)}
                           style={{
                             padding: "6px 10px", borderRadius: 8,
                             background: "transparent", color: T.muted,
@@ -1550,7 +1750,6 @@ export default function App() {
   }
 
   async function handleDeleteClass(id) {
-    if (!window.confirm("Delete this classroom and all its data?")) return;
     setClasses(p => p.filter(c => c.id !== id));
     if (activeClass && activeClass.id === id) setActiveClass(null);
     try {
