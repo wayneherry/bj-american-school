@@ -1636,7 +1636,14 @@ function ClassDashboard({
 
 // ─── Root Application ─────────────────────────────────────────────────────────
 export default function App() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem("bj_auth_user");
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
   const [inTransition, setInTransition] = useState(false);
   const [classes, setClasses] = useState([]);
   const [activeClass, setActiveClass] = useState(null);
@@ -1654,24 +1661,36 @@ export default function App() {
     pendingUpdatesRef.current[sid] = Math.max(0, (pendingUpdatesRef.current[sid] || 0) - 1);
   }
 
-  // Load Classes
+  // Load Classes & Restore Active Class
   async function loadClasses() {
     try {
       const rows = await db.classes.list();
-      if (rows && rows.length > 0) {
-        setClasses(rows);
-      } else {
-        // Starter mockup classes
-        setClasses([
-          { id: 1, name: "Class 1A (Mon & Wed)" },
-          { id: 2, name: "Class 2B (Tue & Thu)" },
-        ]);
-      }
-    } catch (e) {
-      setClasses([
+      const list = (rows && rows.length > 0) ? rows : [
         { id: 1, name: "Class 1A (Mon & Wed)" },
         { id: 2, name: "Class 2B (Tue & Thu)" },
-      ]);
+      ];
+      setClasses(list);
+
+      try {
+        const savedClassId = localStorage.getItem("bj_active_class_id");
+        if (savedClassId) {
+          const match = list.find(c => String(c.id) === String(savedClassId));
+          if (match) setActiveClass(match);
+        }
+      } catch (e) {}
+    } catch (e) {
+      const fallback = [
+        { id: 1, name: "Class 1A (Mon & Wed)" },
+        { id: 2, name: "Class 2B (Tue & Thu)" },
+      ];
+      setClasses(fallback);
+      try {
+        const savedClassId = localStorage.getItem("bj_active_class_id");
+        if (savedClassId) {
+          const match = fallback.find(c => String(c.id) === String(savedClassId));
+          if (match) setActiveClass(match);
+        }
+      } catch (err) {}
     } finally {
       setLoading(false);
     }
@@ -1738,6 +1757,43 @@ export default function App() {
     return () => clearInterval(timer);
   }, [activeClass]);
 
+  // Auth & Class Selection Handlers
+  function handleLogin(userData) {
+    const teacherUser = userData || { role: "teacher", username: "wayneherry" };
+    try {
+      localStorage.setItem("bj_auth_user", JSON.stringify(teacherUser));
+    } catch (e) {}
+    setUser(teacherUser);
+    setInTransition(true);
+  }
+
+  function handleLogout() {
+    try {
+      localStorage.removeItem("bj_auth_user");
+      localStorage.removeItem("bj_active_class_id");
+    } catch (e) {}
+    setUser(null);
+    setActiveClass(null);
+  }
+
+  function handleSelectClass(c) {
+    setActiveClass(c);
+    try {
+      if (c && c.id) {
+        localStorage.setItem("bj_active_class_id", String(c.id));
+      } else {
+        localStorage.removeItem("bj_active_class_id");
+      }
+    } catch (e) {}
+  }
+
+  function handleSwitchClass() {
+    setActiveClass(null);
+    try {
+      localStorage.removeItem("bj_active_class_id");
+    } catch (e) {}
+  }
+
   // Class Management Handlers
   async function handleAddClass(name) {
     try {
@@ -1751,10 +1807,23 @@ export default function App() {
 
   async function handleDeleteClass(id) {
     setClasses(p => p.filter(c => c.id !== id));
-    if (activeClass && activeClass.id === id) setActiveClass(null);
+    if (activeClass && activeClass.id === id) {
+      setActiveClass(null);
+      try {
+        localStorage.removeItem("bj_active_class_id");
+      } catch (e) {}
+    }
     try {
       await db.classes.remove(id);
     } catch (e) {}
+  }
+
+  if (!user) {
+    return <LoginScreen onLogin={handleLogin} />;
+  }
+
+  if (inTransition) {
+    return <TransitionScreen onDone={() => setInTransition(false)} />;
   }
 
   if (loading) {
@@ -1765,22 +1834,14 @@ export default function App() {
     );
   }
 
-  if (!user) {
-    return <LoginScreen onLogin={() => { setUser({ role: "teacher" }); setInTransition(true); }} />;
-  }
-
-  if (inTransition) {
-    return <TransitionScreen onDone={() => setInTransition(false)} />;
-  }
-
   if (!activeClass) {
     return (
       <ClassSelectScreen
         classes={classes}
-        onSelectClass={c => setActiveClass(c)}
+        onSelectClass={handleSelectClass}
         onAddClass={handleAddClass}
         onDeleteClass={handleDeleteClass}
-        onLogout={() => setUser(null)}
+        onLogout={handleLogout}
       />
     );
   }
@@ -1788,14 +1849,14 @@ export default function App() {
   return (
     <ClassDashboard
       currentClass={activeClass}
-      onSwitchClass={() => setActiveClass(null)}
+      onSwitchClass={handleSwitchClass}
       students={students}
       setStudents={setStudents}
       gradeItems={gradeItems}
       setGradeItems={setGradeItems}
       grades={grades}
       setGrades={setGrades}
-      onLogout={() => { setUser(null); setActiveClass(null); }}
+      onLogout={handleLogout}
       onStartUpdateStudent={startUpdateStudent}
       onEndUpdateStudent={endUpdateStudent}
     />
