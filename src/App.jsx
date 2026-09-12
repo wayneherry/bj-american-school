@@ -555,7 +555,7 @@ function QuickScoreModal({ student, onClose, onAdjustPoints, onAdjustStamps, onS
           <div style={{ marginLeft: "auto", textAlign: "right" }}>
             <div style={{ fontSize: 10, color: T.muted, textTransform: "uppercase" }}>Points</div>
             <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 26, fontWeight: 700, color: T.gold }}>
-              {student.points.toLocaleString()}
+              {(student.points ?? 0).toLocaleString()}
             </div>
           </div>
         </div>
@@ -576,18 +576,18 @@ function QuickScoreModal({ student, onClose, onAdjustPoints, onAdjustStamps, onS
         {/* Fast Point Adjustment */}
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 12, color: T.muted, marginBottom: 8, fontWeight: 700 }}>⚡ Quick Points:</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 7 }}>
-            {[-100, -50, +50, +100].map(d => (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 5 }}>
+            {[-100, -50, -10, +10, +50, +100].map(d => (
               <button
                 key={d}
                 type="button"
                 onClick={() => onAdjustPoints(student.id, d)}
                 style={{
-                  padding: "10px 0", borderRadius: 10,
+                  padding: "9px 0", borderRadius: 10,
                   background: d > 0 ? T.goldDim : T.raised,
                   color: d > 0 ? T.gold : T.silver,
                   border: `1px solid ${d > 0 ? `${T.gold}55` : T.line}`,
-                  fontWeight: 800, fontSize: 15, cursor: "pointer",
+                  fontWeight: 800, fontSize: 13, cursor: "pointer",
                 }}
               >
                 {d > 0 ? `+${d}` : d}
@@ -979,7 +979,7 @@ function ClassDashboard({
   async function adjustPoints(sid, delta) {
     const s = students.find(x => x.id === sid);
     if (!s) return;
-    const newPts = Math.max(0, (s.points || 0) + delta);
+    const newPts = (s.points ?? 0) + delta;
     setStudents(p => p.map(x => x.id === sid ? { ...x, points: newPts, _lastUpdated: Date.now() } : x));
     if (scannedStudent && scannedStudent.id === sid) {
       setScannedStudent(prev => ({ ...prev, points: newPts }));
@@ -1349,7 +1349,7 @@ function ClassDashboard({
                       <div style={{ marginLeft: "auto", textAlign: "right" }}>
                         <div style={{ fontSize: 10, color: T.muted, textTransform: "uppercase" }}>Points</div>
                         <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 26, fontWeight: 700, color: T.gold }}>
-                          {s.points.toLocaleString()}
+                          {(s.points ?? 0).toLocaleString()}
                         </div>
                       </div>
                     </div>
@@ -1361,18 +1361,18 @@ function ClassDashboard({
 
                     {/* Quick Adjust Buttons */}
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-                      <div style={{ display: "flex", gap: 6 }}>
-                        {[-100, -50, +50, +100].map(d => (
+                      <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                        {[-100, -50, -10, +10, +50, +100].map(d => (
                           <button
                             key={d}
                             type="button"
                             onClick={() => adjustPoints(s.id, d)}
                             style={{
-                              padding: "7px 12px", borderRadius: 8,
+                              padding: "6px 9px", borderRadius: 8,
                               background: d > 0 ? T.goldDim : T.raised,
                               color: d > 0 ? T.gold : T.silver,
                               border: `1px solid ${d > 0 ? `${T.gold}44` : T.line}`,
-                              fontWeight: 800, fontSize: 13, cursor: "pointer",
+                              fontWeight: 800, fontSize: 12, cursor: "pointer",
                             }}
                           >
                             {d > 0 ? `+${d}` : d}
